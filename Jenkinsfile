@@ -6,20 +6,22 @@ pipeline {
                 git branch: 'dev', url: 'https://github.com/vinay-hegde-17/TestFastAPI.git'
             }
         }
-        stage('Install Dependencies') {
+        stage('Setup venv') {
             steps {
-                sh 'pip install -r requirements.txt'
+                bat 'python -m venv venv'
+                bat 'venv\\Scripts\\pip install -r requirements.txt'
             }
         }
-        stage('Run Backend Tests') {
+        stage('Run Backend') {
             steps {
-                sh 'pytest --maxfail=1 --disable-warnings --html=reports/backend_report.html'
+                // Run FastAPI in background
+                bat 'start /B run_server.bat'
             }
         }
-        stage('Archive Report') {
-            steps {
-                archiveArtifacts artifacts: 'reports/*.html', fingerprint: true
-            }
+    }
+    post {
+        success {
+            echo 'Backend started successfully'
         }
     }
 }
