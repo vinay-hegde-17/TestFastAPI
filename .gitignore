@@ -1,0 +1,28 @@
+# .gitignore
+
+# Python artifacts
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.iml
+
+# Virtual environments
+.venv/
+env/
+venv/
+
+# IDE configs
+.idea/
+.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Test reports
+reports/
+*.html
+
+# Environment variables
+.env
