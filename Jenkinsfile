@@ -16,15 +16,14 @@ pipeline {
 
         stage('Run Backend') {
             steps {
-                // Start FastAPI using your .bat file
-                bat 'start "" /B run_server.bat'
+                // Run FastAPI using batch file, not python
+                bat 'call run_server.bat'
 
-                // Give the server time to start (5 sec)
+                // Wait for server to start
                 bat 'ping 127.0.0.1 -n 6 >nul'
             }
         }
     }
-
     post {
         success {
             echo 'Backend started successfully'
