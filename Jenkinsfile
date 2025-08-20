@@ -1,5 +1,7 @@
 pipeline {
     agent any
+    options { disableConcurrentBuilds() }
+
     stages {
         stage('Checkout Backend') {
             steps {
@@ -13,6 +15,7 @@ pipeline {
             steps {
                 dir('backend') {
                     bat 'python -m venv venv'
+                    bat 'call venv\\Scripts\\activate && python -m pip install --upgrade pip'
                     bat 'call venv\\Scripts\\activate && pip install -r requirements.txt'
                 }
             }
@@ -21,10 +24,8 @@ pipeline {
         stage('Start Backend') {
             steps {
                 dir('backend') {
-                    // call the batch file (make sure run_server.bat activates venv)
                     bat 'start "" /B run_server.bat'
                 }
-                // wait ~5s for server
                 bat 'ping 127.0.0.1 -n 6 >nul'
             }
         }
@@ -41,8 +42,14 @@ pipeline {
             steps {
                 dir('tests') {
                     bat 'python -m venv venv'
-                    bat 'call venv\\Scripts\\activate && pip install --upgrade pip'
-                    // install pytest + reporter
+                    bat 'call venv\\Scripts\\activate && python -m pip install --upgrade pip'
+                    bat '''
+                        if exist requirements.txt (
+                            call venv\\Scripts\\activate && pip install -r requirements.txt
+                        ) else (
+                            echo No requirements.txt in test repo
+                        )
+                    '''
                     bat 'call venv\\Scripts\\activate && pip install requests pytest pytest-html'
                 }
             }
@@ -67,7 +74,6 @@ pipeline {
 
     post {
         always {
-            // Kill FastAPI running on port 8000
             bat 'powershell -NoLogo -NonInteractive -Command "Get-NetTCPConnection -LocalPort 8000 -State Listen -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force }"'
         }
     }
