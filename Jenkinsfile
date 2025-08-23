@@ -67,6 +67,15 @@ pipeline {
             steps {
                 dir('tests') {
                     archiveArtifacts artifacts: 'report.html', fingerprint: true
+
+                    // Publish HTML report directly in Jenkins
+                    publishHTML(target: [
+                        reportName: 'Test Report',
+                        reportDir: '.',
+                        reportFiles: 'report.html',
+                        alwaysLinkToLastBuild: true,
+                        keepAll: true
+                    ])
                 }
             }
         }
