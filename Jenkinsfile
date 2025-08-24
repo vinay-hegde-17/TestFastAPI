@@ -30,6 +30,12 @@ pipeline {
             }
         }
 
+        stage('Verify Backend') {
+            steps {
+                bat 'powershell -Command "try { Invoke-WebRequest http://127.0.0.1:8000/docs -UseBasicParsing -TimeoutSec 10; exit 0 } catch { exit 1 }"'
+            }
+        }
+
         stage('Checkout Tests') {
             steps {
                 dir('tests') {
