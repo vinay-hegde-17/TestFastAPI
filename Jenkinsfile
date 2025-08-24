@@ -58,7 +58,7 @@ pipeline {
         stage('Run Tests') {
             steps {
                 dir('tests') {
-                    bat 'call venv\\Scripts\\activate && pytest --maxfail=1 --disable-warnings -q --html=report.html --self-contained-html'
+                    bat 'call venv\\Scripts\\activate && pytest'
                 }
             }
         }
@@ -66,12 +66,12 @@ pipeline {
         stage('Archive Report') {
             steps {
                 dir('tests') {
-                    archiveArtifacts artifacts: 'report.html', fingerprint: true
+                    archiveArtifacts artifacts: 'reports/test_report.html', fingerprint: true
 
                     publishHTML(target: [
                         reportName: 'Test Report',
-                        reportDir: '.',
-                        reportFiles: 'report.html',
+                        reportDir: 'reports',
+                        reportFiles: 'test_report.html',
                         alwaysLinkToLastBuild: true,
                         keepAll: true
                     ])
