@@ -29,13 +29,25 @@ pipeline {
                     start /MIN cmd /c "python -m uvicorn main:app --host 127.0.0.1 --port 8000"
                     '''
                 }
-                bat 'ping 127.0.0.1 -n 20 >nul'
             }
         }
 
         stage('Verify Backend') {
             steps {
-                bat 'powershell -Command "try { Invoke-WebRequest http://127.0.0.1:8000/docs -UseBasicParsing -TimeoutSec 10; exit 0 } catch { exit 1 }"'
+                bat '''
+                powershell -Command "
+                $max=15;
+                for ($i=0; $i -lt $max; $i++) {
+                try {
+                    Invoke-WebRequest http://127.0.0.1:8000/docs -UseBasicParsing -TimeoutSec 2;
+                    exit 0
+                } catch {
+                    Start-Sleep -Seconds 2
+                }
+                }
+                exit 1
+                "
+                '''
             }
         }
 
