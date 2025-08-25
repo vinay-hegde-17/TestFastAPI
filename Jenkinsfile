@@ -84,6 +84,27 @@ pipeline {
                 }
             }
         }
+
+        stage('Merge dev to main') {
+            when {
+                expression { currentBuild.currentResult == 'SUCCESS' }
+            }
+            steps {
+                dir('backend') {
+                    withCredentials([usernamePassword(credentialsId: 'github-creds', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
+                        bat '''
+                        git config user.name "jenkins"
+                        git config user.email "jenkins@local"
+                        git remote set-url origin https://%GIT_USER%:%GIT_PASS%@github.com/vinay-hegde-17/TestFastAPI.git
+                        git fetch origin
+                        git checkout main
+                        git merge origin/dev --no-ff -m "Auto-merge from dev after successful Jenkins build"
+                        git push origin main
+                        '''
+                    }
+                }
+            }
+        }
     }
 
     post {
