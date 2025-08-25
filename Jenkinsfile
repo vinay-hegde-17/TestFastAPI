@@ -24,7 +24,10 @@ pipeline {
         stage('Start Backend') {
             steps {
                 dir('backend') {
-                    bat 'start "" /B cmd /c "call venv\\Scripts\\activate && python -m uvicorn main:app --host 127.0.0.1 --port 8000"'
+                    bat '''
+                    call venv\\Scripts\\activate
+                    start /MIN cmd /c "python -m uvicorn main:app --host 127.0.0.1 --port 8000"
+                    '''
                 }
                 bat 'ping 127.0.0.1 -n 20 >nul'
             }
