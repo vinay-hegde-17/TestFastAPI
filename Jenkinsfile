@@ -24,7 +24,7 @@ pipeline {
         stage('Start Backend') {
             steps {
                 dir('backend') {
-                    bat 'start "" /B cmd /c "call venv\\Scripts\\activate && python -m uvicorn app.main:app --host 127.0.0.1 --port 8000"'
+                    bat 'start "" /B cmd /c "call venv\\Scripts\\activate && python -m uvicorn main:app --host 127.0.0.1 --port 8000"'
                 }
                 bat 'ping 127.0.0.1 -n 20 >nul'
             }
@@ -64,7 +64,7 @@ pipeline {
         stage('Run Tests') {
             steps {
                 dir('tests') {
-                    bat 'call venv\\Scripts\\activate && pytest'
+                    bat 'call venv\\Scripts\\activate && pytest tests/test_cases --html=reports/test_report.html --self-contained-html'
                 }
             }
         }
@@ -73,7 +73,6 @@ pipeline {
             steps {
                 dir('tests') {
                     archiveArtifacts artifacts: 'reports/test_report.html', fingerprint: true
-
                     publishHTML(target: [
                         reportName: 'Test Report',
                         reportDir: 'reports',
@@ -85,9 +84,10 @@ pipeline {
             }
         }
 
+        // ✅ Only runs if ALL previous stages succeed
         stage('Merge dev to main') {
             when {
-                expression { currentBuild.currentResult == 'SUCCESS' }
+                expression { currentBuild.resultIsBetterOrEqualTo('SUCCESS') }
             }
             steps {
                 dir('backend') {
@@ -95,10 +95,22 @@ pipeline {
                         bat '''
                         git config user.name "jenkins"
                         git config user.email "jenkins@local"
-                        git remote set-url origin https://%GIT_USER%:%GIT_PASS%@github.com/vinay-hegde-17/TestFastAPI.git
-                        git fetch origin
+
+                        REM ensure we are on dev
+                        git checkout dev
+                        git pull origin dev
+
+                        REM fetch main branch
+                        git fetch origin main
+
+                        REM switch to main
                         git checkout main
-                        git merge origin/dev --no-ff -m "Auto-merge from dev after successful Jenkins build"
+                        git pull origin main
+
+                        REM merge dev into main
+                        git merge dev --no-ff -m "Auto-merge: dev -> main after successful Jenkins build"
+
+                        REM push main
                         git push origin main
                         '''
                     }
