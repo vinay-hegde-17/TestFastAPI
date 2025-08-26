@@ -1,3 +1,4 @@
+@ -1,92 +1,98 @@
 pipeline {
     agent any
     options { disableConcurrentBuilds() }
@@ -24,30 +25,15 @@ pipeline {
         stage('Start Backend') {
             steps {
                 dir('backend') {
-                    bat '''
-                    call venv\\Scripts\\activate
-                    start /MIN cmd /c "python -m uvicorn main:app --host 127.0.0.1 --port 8000"
-                    '''
+                    bat 'start "" /B cmd /c "call venv\\Scripts\\activate && python -m uvicorn app.main:app --host 127.0.0.1 --port 8000"'
                 }
+                bat 'ping 127.0.0.1 -n 20 >nul'
             }
         }
 
         stage('Verify Backend') {
             steps {
-                bat '''
-                powershell -Command "
-                $max=15;
-                for ($i=0; $i -lt $max; $i++) {
-                try {
-                    Invoke-WebRequest http://127.0.0.1:8000/docs -UseBasicParsing -TimeoutSec 2;
-                    exit 0
-                } catch {
-                    Start-Sleep -Seconds 2
-                }
-                }
-                exit 1
-                "
-                '''
+                bat 'powershell -Command "try { Invoke-WebRequest http://127.0.0.1:8000/docs -UseBasicParsing -TimeoutSec 10; exit 0 } catch { exit 1 }"'
             }
         }
 
@@ -79,7 +65,7 @@ pipeline {
         stage('Run Tests') {
             steps {
                 dir('tests') {
-                    bat 'call venv\\Scripts\\activate && pytest tests/test_cases --html=reports/test_report.html --self-contained-html'
+                    bat 'call venv\\Scripts\\activate && pytest'
                 }
             }
         }
@@ -88,6 +74,7 @@ pipeline {
             steps {
                 dir('tests') {
                     archiveArtifacts artifacts: 'reports/test_report.html', fingerprint: true
+
                     publishHTML(target: [
                         reportName: 'Test Report',
                         reportDir: 'reports',
@@ -95,40 +82,6 @@ pipeline {
                         alwaysLinkToLastBuild: true,
                         keepAll: true
                     ])
-                }
-            }
-        }
-
-        // ✅ Only runs if ALL previous stages succeed
-        stage('Merge dev to main') {
-            when {
-                expression { currentBuild.resultIsBetterOrEqualTo('SUCCESS') }
-            }
-            steps {
-                dir('backend') {
-                    withCredentials([usernamePassword(credentialsId: 'github-creds', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
-                        bat '''
-                        git config user.name "jenkins"
-                        git config user.email "jenkins@local"
-
-                        REM ensure we are on dev
-                        git checkout dev
-                        git pull origin dev
-
-                        REM fetch main branch
-                        git fetch origin main
-
-                        REM switch to main
-                        git checkout main
-                        git pull origin main
-
-                        REM merge dev into main
-                        git merge dev --no-ff -m "Auto-merge: dev -> main after successful Jenkins build"
-
-                        REM push main
-                        git push origin main
-                        '''
-                    }
                 }
             }
         }
