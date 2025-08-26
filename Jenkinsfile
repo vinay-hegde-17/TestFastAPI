@@ -88,24 +88,27 @@ pipeline {
 
     post {
         success {
-            script {
-                if (!env.BRANCH_NAME || env.BRANCH_NAME == 'dev') {
-                    dir('backend') {
-                        withCredentials([usernamePassword(credentialsId: 'github-creds', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
-                            bat '''
-                                git config user.email "jenkins@yourdomain.com"
-                                git config user.name "Jenkins"
-                                git fetch origin
-                                git checkout main
-                                git pull origin main
-                                git merge dev
-                                git push https://%GIT_USER%:%GIT_PASS%@github.com/vinay-hegde-17/TestFastAPI.git main
-                            '''
-                        }
-                    }
+            dir('backend') {
+                withCredentials([usernamePassword(credentialsId: 'github-creds', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
+                    bat '''
+                        REM Ensure dev is up-to-date
+                        git checkout dev
+                        git pull origin dev
+
+                        REM Switch to main
+                        git checkout main
+                        git pull origin main
+
+                        REM Merge dev into main
+                        git merge dev
+
+                        REM Push merged code back to main
+                        git push https://%GIT_USER%:%GIT_PASS%@github.com/vinay-hegde-17/TestFastAPI.git main
+                    '''
                 }
             }
         }
+
         always {
             bat '''
             powershell -NoLogo -NonInteractive -Command ^
