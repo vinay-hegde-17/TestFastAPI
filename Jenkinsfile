@@ -6,7 +6,15 @@ pipeline {
         stage('Checkout Backend') {
             steps {
                 dir('backend') {
-                    git branch: 'dev', url: 'https://github.com/vinay-hegde-17/TestFastAPI.git'
+                    checkout([$class: 'GitSCM',
+                        branches: [[name: '*/dev']],
+                        doGenerateSubmoduleConfigurations: false,
+                        extensions: [[$class: 'CloneOption', noTags: false, shallow: false, depth: 0]],
+                        userRemoteConfigs: [[
+                            url: 'https://github.com/vinay-hegde-17/TestFastAPI.git',
+                            credentialsId: 'github-creds'
+                        ]]
+                    ])
                 }
             }
         }
@@ -39,7 +47,15 @@ pipeline {
         stage('Checkout Tests') {
             steps {
                 dir('tests') {
-                    git branch: 'dev', url: 'https://github.com/vinay-hegde-17/VinayTestAutomation.git'
+                    checkout([$class: 'GitSCM',
+                        branches: [[name: '*/dev']],
+                        doGenerateSubmoduleConfigurations: false,
+                        extensions: [[$class: 'CloneOption', noTags: false, shallow: false, depth: 0]],
+                        userRemoteConfigs: [[
+                            url: 'https://github.com/vinay-hegde-17/VinayTestAutomation.git',
+                            credentialsId: 'github-creds'
+                        ]]
+                    ])
                 }
             }
         }
@@ -64,7 +80,7 @@ pipeline {
         stage('Run Tests') {
             steps {
                 dir('tests') {
-                    bat 'call venv\\Scripts\\activate && pytest'
+                    bat 'call venv\\Scripts\\activate && pytest --html=reports/test_report.html --self-contained-html'
                 }
             }
         }
@@ -84,36 +100,37 @@ pipeline {
                 }
             }
         }
-
-        stage('Merge dev to main') {
-            when {
-                expression { currentBuild.result == 'SUCCESS' }
-            }
-            steps {
-                dir('backend') {
-                    withCredentials([usernamePassword(credentialsId: 'github-creds', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
-                        bat '''
-                        git config user.name "jenkins"
-                        git config user.email "jenkins@local"
-                        git remote set-url origin https://%GIT_USER%:%GIT_PASS%@github.com/vinay-hegde-17/TestFastAPI.git
-
-                        git fetch origin
-                        git checkout dev
-                        git pull origin dev
-
-                        git checkout main
-                        git pull origin main
-
-                        git merge dev --no-ff -m "Auto-merge: dev → main after successful Jenkins build"
-                        git push origin main
-                        '''
-                    }
-                }
-            }
-        }
     }
 
     post {
+        success {
+            dir('backend') {
+                withCredentials([usernamePassword(credentialsId: 'github-creds', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
+                    bat '''
+                        git config user.email "jenkins@local"
+                        git config user.name "Jenkins"
+
+                        REM Fetch all branches with full history
+                        git fetch --all
+
+                        REM Ensure we are on main branch
+                        git checkout main
+                        git pull origin main
+
+                        REM Merge dev into main
+                        git merge origin/dev
+
+                        REM Debug info
+                        git log --oneline -10
+                        git status
+
+                        REM Push merged code back to main
+                        git push https://%GIT_USER%:%GIT_PASS%@github.com/vinay-hegde-17/TestFastAPI.git main
+                    '''
+                }
+            }
+        }
+
         always {
             bat '''
             powershell -NoLogo -NonInteractive -Command ^
