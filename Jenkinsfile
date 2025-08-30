@@ -17,6 +17,8 @@ pipeline {
                 dir('backend') {
                     checkout([$class: 'GitSCM',
                         branches: [[name: '*/dev']],
+                        doGenerateSubmoduleConfigurations: false,
+                        extensions: [],
                         userRemoteConfigs: [[
                             url: "${BACKEND_REPO}",
                             credentialsId: "${GITHUB_CREDENTIALS}"
@@ -61,6 +63,8 @@ pipeline {
                 dir('tests') {
                     checkout([$class: 'GitSCM',
                         branches: [[name: '*/dev']],
+                        doGenerateSubmoduleConfigurations: false,
+                        extensions: [],
                         userRemoteConfigs: [[
                             url: "${TEST_REPO}",
                             credentialsId: "${GITHUB_CREDENTIALS}"
@@ -142,20 +146,19 @@ pipeline {
             }
             steps {
                     dir('backend') {
-                        withCredentials([usernamePassword(credentialsId: "${GITHUB_CREDENTIALS}", 
-                                                            usernameVariable: 'GIT_USER', 
-                                                            passwordVariable: 'GIT_PASS')]) {
+                        withCredentials([usernamePassword(credentialsId: "${GITHUB_CREDENTIALS}",
+                            usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
                             bat """
                                 git config user.name "Jenkins CI"
                                 git config user.email "jenkins@yourdomain.com"
-                                
+
                                 git fetch origin
                                 git checkout dev
                                 git pull origin dev
-                                
+
                                 git checkout -B main
                                 git merge dev --no-edit
-                                
+
                                 git push https://${GIT_USER}:${GIT_PASS}@github.com/vinay-hegde-17/TestFastAPI.git main --force
                             """
                         }
