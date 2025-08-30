@@ -6,7 +6,7 @@ pipeline {
     }
 
     environment {
-        GITHUB_CREDENTIALS = 'github-token' // Replace with your Jenkins credential ID
+        GITHUB_CREDENTIALS = 'github-creds'
         BACKEND_REPO = 'https://github.com/vinay-hegde-17/TestFastAPI.git'
         TEST_REPO = 'https://github.com/vinay-hegde-17/VinayTestAutomation.git'
     }
@@ -112,6 +112,18 @@ pipeline {
                         alwaysLinkToLastBuild: true,
                         keepAll: true
                     ])
+                }
+            }
+        }
+
+        stage('Debug Git Status') {
+            steps {
+                dir('backend') {
+                    bat '''
+                        git status
+                        git branch -a
+                        git log --oneline -3
+                    '''
                 }
             }
         }
