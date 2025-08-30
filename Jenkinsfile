@@ -131,14 +131,11 @@ pipeline {
                                 REM Fetch all branches
                                 git fetch origin
                                 
-                                REM Switch to main branch (create if doesn't exist)
-                                git checkout -B main origin/main 2>nul || git checkout -b main
+                                REM Force checkout main and reset to match dev
+                                git checkout -B main origin/dev
                                 
-                                REM Merge dev into main
-                                git merge origin/dev --no-ff -m "Auto-merge: Tests passed on dev branch - Build #%BUILD_NUMBER%"
-                                
-                                REM Push to main with token authentication
-                                git push https://%GITHUB_TOKEN%@github.com/vinay-hegde-17/TestFastAPI.git main
+                                REM Push to main (this will make main identical to dev)
+                                git push https://%GITHUB_TOKEN%@github.com/vinay-hegde-17/TestFastAPI.git main --force
                             '''
                         }
                     }
