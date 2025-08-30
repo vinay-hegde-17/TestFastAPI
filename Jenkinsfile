@@ -15,9 +15,13 @@ pipeline {
         stage('Checkout Backend') {
             steps {
                 dir('backend') {
-                    git branch: 'dev', 
-                        url: "${BACKEND_REPO}",
-                        credentialsId: "${GITHUB_CREDENTIALS}"
+                    checkout([$class: 'GitSCM',
+                        branches: [[name: '*/dev']],
+                        userRemoteConfigs: [[
+                            url: "${BACKEND_REPO}",
+                            credentialsId: "${GITHUB_CREDENTIALS}"
+                        ]]
+                    ])
                 }
             }
         }
@@ -133,32 +137,24 @@ pipeline {
                 expression { currentBuild.result == null || currentBuild.result == 'SUCCESS' }
             }
             steps {
-                script {
                     dir('backend') {
-                        withCredentials([string(credentialsId: "${GITHUB_CREDENTIALS}", variable: 'GITHUB_TOKEN')]) {
-                            bat '''
+                        withCredentials([usernamePassword(credentialsId: "${GITHUB_CREDENTIALS}", 
+                                                            usernameVariable: 'GIT_USER', 
+                                                            passwordVariable: 'GIT_PASS')]) {
+                            bat """
                                 git config user.name "Jenkins CI"
                                 git config user.email "jenkins@yourdomain.com"
                                 
-                                REM Fetch all branches
                                 git fetch origin
+                                git checkout dev
+                                git pull origin dev
                                 
-                                REM Force checkout main and reset to match dev
-                                git checkout -B main origin/dev
+                                git checkout -B main
+                                git merge dev --no-edit
                                 
-                                REM Push to main (this will make main identical to dev)
-                                git push https://%GITHUB_TOKEN%@github.com/vinay-hegde-17/TestFastAPI.git main --force
-                            '''
+                                git push https://${GIT_USER}:${GIT_PASS}@github.com/vinay-hegde-17/TestFastAPI.git main --force
+                            """
                         }
-                    }
-                }
-            }
-            post {
-                success {
-                    echo "✅ Successfully pushed to main branch! Ready for Vercel deployment."
-                }
-                failure {
-                    echo "❌ Failed to push to main branch. Check Git configuration and permissions."
                 }
             }
         }
@@ -168,40 +164,24 @@ pipeline {
                 expression { currentBuild.result == null || currentBuild.result == 'SUCCESS' }
             }
             steps {
-                script {
-                    echo "🚀 Main branch updated - Vercel will auto-deploy if connected to main branch"
-                    // Optional: Add webhook call to trigger Vercel deployment manually
-                    // bat 'curl -X POST "your-vercel-webhook-url"'
-                }
+                echo "🚀 Main branch updated - Vercel will auto-deploy"
             }
         }
     }
 
     post {
         always {
-            // Cleanup: Stop backend server
             bat '''
                 powershell -NoLogo -NonInteractive -Command ^
                 "Get-NetTCPConnection -LocalPort 8000 -State Listen -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force }; exit 0"
             '''
-            
-            // Cleanup: Remove virtual environments to save space
             bat '''
                 if exist backend\\venv rmdir /s /q backend\\venv
                 if exist tests\\venv rmdir /s /q tests\\venv
             '''
         }
-        
         success {
-            echo "🎉 Pipeline completed successfully! Code has been pushed to main and is ready for deployment."
-        }
-        
-        failure {
-            echo "💥 Pipeline failed. Check the logs above for details."
-        }
-        
-        unstable {
-            echo "⚠️ Pipeline completed with warnings. Check test results."
+            echo "🎉 Pipeline completed successfully! Code has been merged into main."
         }
     }
 }
