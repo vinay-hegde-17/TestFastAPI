@@ -6,15 +6,7 @@ pipeline {
         stage('Checkout Backend') {
             steps {
                 dir('backend') {
-                    checkout([$class: 'GitSCM',
-                        branches: [[name: '*/dev']],
-                        doGenerateSubmoduleConfigurations: false,
-                        extensions: [[$class: 'CloneOption', noTags: false, shallow: false, depth: 0]],
-                        userRemoteConfigs: [[
-                            url: 'https://github.com/vinay-hegde-17/TestFastAPI.git',
-                            credentialsId: 'github-creds'
-                        ]]
-                    ])
+                    git branch: 'dev', url: 'https://github.com/vinay-hegde-17/TestFastAPI.git'
                 }
             }
         }
@@ -32,47 +24,22 @@ pipeline {
         stage('Start Backend') {
             steps {
                 dir('backend') {
-                    bat '''
-                    call venv\\Scripts\\activate
-                    start /MIN cmd /c "python -m uvicorn app.main:app --host 127.0.0.1 --port 8000"
-                    '''
+                    bat 'start "" /B cmd /c "call venv\\Scripts\\activate && python -m uvicorn app.main:app --host 127.0.0.1 --port 8000"'
                 }
+                bat 'ping 127.0.0.1 -n 20 >nul'
             }
         }
 
         stage('Verify Backend') {
             steps {
-                bat '''
-                powershell -Command "
-                $max=15;
-                for ($i=0; $i -lt $max; $i++) {
-                try {
-                    Invoke-WebRequest http://127.0.0.1:8000/docs -UseBasicParsing -TimeoutSec 2;
-                    Write-Host 'Backend is UP';
-                    exit 0
-                } catch {
-                    Start-Sleep -Seconds 2
-                }
-                }
-                Write-Error 'Backend failed to start';
-                exit 1
-                "
-                '''
+                bat 'powershell -Command "try { Invoke-WebRequest http://127.0.0.1:8000/docs -UseBasicParsing -TimeoutSec 10; exit 0 } catch { exit 1 }"'
             }
         }
 
         stage('Checkout Tests') {
             steps {
                 dir('tests') {
-                    checkout([$class: 'GitSCM',
-                        branches: [[name: '*/dev']],
-                        doGenerateSubmoduleConfigurations: false,
-                        extensions: [[$class: 'CloneOption', noTags: false, shallow: false, depth: 0]],
-                        userRemoteConfigs: [[
-                            url: 'https://github.com/vinay-hegde-17/VinayTestAutomation.git',
-                            credentialsId: 'github-creds'
-                        ]]
-                    ])
+                    git branch: 'dev', url: 'https://github.com/vinay-hegde-17/VinayTestAutomation.git'
                 }
             }
         }
@@ -97,7 +64,7 @@ pipeline {
         stage('Run Tests') {
             steps {
                 dir('tests') {
-                    bat 'call venv\\Scripts\\activate && pytest --html=reports/test_report.html --self-contained-html'
+                    bat 'call venv\\Scripts\\activate && pytest'
                 }
             }
         }
@@ -120,34 +87,6 @@ pipeline {
     }
 
     post {
-        success {
-            dir('backend') {
-                withCredentials([usernamePassword(credentialsId: 'github-creds', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
-                    bat '''
-                        git config user.email "jenkins@local"
-                        git config user.name "Jenkins"
-
-                        REM Fetch all branches with full history
-                        git fetch --all
-
-                        REM Ensure we are on main branch
-                        git checkout main
-                        git pull origin main
-
-                        REM Merge dev into main
-                        git merge origin/dev
-
-                        REM Debug info
-                        git log --oneline -10
-                        git status
-
-                        REM Push merged code back to main
-                        git push https://%GIT_USER%:%GIT_PASS%@github.com/vinay-hegde-17/TestFastAPI.git main
-                    '''
-                }
-            }
-        }
-
         always {
             bat '''
             powershell -NoLogo -NonInteractive -Command ^
