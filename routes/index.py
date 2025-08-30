@@ -1,9 +1,9 @@
 #main.py for register all routes
 
 from fastapi import APIRouter
-from app.routes.users import router as user_router
-from app.routes.items import router as item_router
-from app.routes.orders import router as order_router
+from routes.users import router as user_router
+from routes.items import router as item_router
+from routes.orders import router as order_router
 
 router = APIRouter()
 

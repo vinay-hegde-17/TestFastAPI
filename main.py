@@ -1,10 +1,8 @@
-#main.py entry point
-
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 
-from app.routes.index import router
-from app.database import user_collection, item_collection, order_collection
+from routes.index import router
+from database import user_collection, item_collection, order_collection
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

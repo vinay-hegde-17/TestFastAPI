@@ -1,8 +1,8 @@
 #users.py for users routes
 
 from fastapi import APIRouter, HTTPException
-from app.models import UserInfo
-from app.database import user_collection
+from models import UserInfo
+from database import user_collection
 from bson import ObjectId
 
 router = APIRouter()

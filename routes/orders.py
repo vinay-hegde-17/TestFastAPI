@@ -1,8 +1,8 @@
 #orders.py for orders routes
 
 from fastapi import APIRouter, HTTPException
-from app.models import OrderInfo
-from app.database import order_collection
+from models import OrderInfo
+from database import order_collection
 from bson import ObjectId
 
 router = APIRouter()
