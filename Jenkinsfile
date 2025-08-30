@@ -24,9 +24,21 @@ pipeline {
         stage('Start Backend') {
             steps {
                 dir('backend') {
-                    bat 'start "" /B cmd /c "call venv\\Scripts\\activate && python -m uvicorn app.main:app --host 127.0.0.1 --port 8000"'
+                    bat 'start "" /B cmd /c "call venv\\Scripts\\activate && python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 > uvicorn.log 2>&1"'
                 }
-                bat 'ping 127.0.0.1 -n 20 >nul'
+                powershell '''
+                $max = 15
+                for ($i = 0; $i -lt $max; $i++) {
+                    try {
+                        Invoke-WebRequest http://127.0.0.1:8000/docs -UseBasicParsing -TimeoutSec 2
+                        exit 0
+                    } catch {
+                        Start-Sleep -Seconds 2
+                    }
+                }
+                Write-Error "Backend did not start in time."
+                exit 1
+                '''
             }
         }
 
