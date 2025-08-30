@@ -59,9 +59,13 @@ pipeline {
         stage('Checkout Tests') {
             steps {
                 dir('tests') {
-                    git branch: 'dev',
-                        url: "${TEST_REPO}",
-                        credentialsId: "${GITHUB_CREDENTIALS}"
+                    checkout([$class: 'GitSCM',
+                        branches: [[name: '*/dev']],
+                        userRemoteConfigs: [[
+                            url: "${TEST_REPO}",
+                            credentialsId: "${GITHUB_CREDENTIALS}"
+                        ]]
+                    ])
                 }
             }
         }
