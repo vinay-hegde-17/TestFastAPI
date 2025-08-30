@@ -1,6 +1,7 @@
 pipeline {
     agent any
     options { 
+        skipDefaultCheckout(true)
         disableConcurrentBuilds()
         timeout(time: 30, unit: 'MINUTES')
     }
@@ -17,8 +18,6 @@ pipeline {
                 dir('backend') {
                     checkout([$class: 'GitSCM',
                         branches: [[name: '*/dev']],
-                        doGenerateSubmoduleConfigurations: false,
-                        extensions: [],
                         userRemoteConfigs: [[
                             url: "${BACKEND_REPO}",
                             credentialsId: "${GITHUB_CREDENTIALS}"
