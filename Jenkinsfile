@@ -32,15 +32,32 @@ pipeline {
         stage('Start Backend') {
             steps {
                 dir('backend') {
-                    bat 'start "" /B cmd /c "call venv\\Scripts\\activate && python -m uvicorn app.main:app --host 127.0.0.1 --port 8000"'
+                    bat '''
+                    call venv\\Scripts\\activate
+                    start /MIN cmd /c "python -m uvicorn app.main:app --host 127.0.0.1 --port 8000"
+                    '''
                 }
-                bat 'ping 127.0.0.1 -n 20 >nul'
             }
         }
 
         stage('Verify Backend') {
             steps {
-                bat 'powershell -Command "try { Invoke-WebRequest http://127.0.0.1:8000/docs -UseBasicParsing -TimeoutSec 10; exit 0 } catch { exit 1 }"'
+                bat '''
+                powershell -Command "
+                $max=15;
+                for ($i=0; $i -lt $max; $i++) {
+                try {
+                    Invoke-WebRequest http://127.0.0.1:8000/docs -UseBasicParsing -TimeoutSec 2;
+                    Write-Host 'Backend is UP';
+                    exit 0
+                } catch {
+                    Start-Sleep -Seconds 2
+                }
+                }
+                Write-Error 'Backend failed to start';
+                exit 1
+                "
+                '''
             }
         }
 
