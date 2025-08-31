@@ -20,7 +20,7 @@ pipeline {
                         branches: [[name: '*/dev']],
                         userRemoteConfigs: [[
                             url: "${BACKEND_REPO}",
-                            credentialsId: "${GITHUB_CREDENTIALS}",
+                            credentialsId: 'github-creds',
                         ]]
                     ])
                 }
@@ -76,7 +76,7 @@ pipeline {
                         extensions: [],
                         userRemoteConfigs: [[
                             url: "${TEST_REPO}",
-                            credentialsId: "${GITHUB_CREDENTIALS}",
+                            credentialsId: 'github-creds',
                         ]]
                     ])
                 }
