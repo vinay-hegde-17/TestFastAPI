@@ -20,7 +20,7 @@ pipeline {
                         branches: [[name: '*/dev']],
                         userRemoteConfigs: [[
                             url: "${BACKEND_REPO}",
-                            credentialsId: "${GITHUB_CREDENTIALS}"
+                            credentialsId: GITHUB_CREDENTIALS
                         ]]
                     ])
                 }
@@ -66,7 +66,7 @@ pipeline {
                         extensions: [],
                         userRemoteConfigs: [[
                             url: "${TEST_REPO}",
-                            credentialsId: "${GITHUB_CREDENTIALS}"
+                            credentialsId: GITHUB_CREDENTIALS
                         ]]
                     ])
                 }
@@ -145,7 +145,7 @@ pipeline {
             }
             steps {
                     dir('backend') {
-                        withCredentials([usernamePassword(credentialsId: "${GITHUB_CREDENTIALS}",
+                        withCredentials([usernamePassword(credentialsId: GITHUB_CREDENTIALS,
                             usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
                             bat """
                                 git config user.name "Jenkins CI"
