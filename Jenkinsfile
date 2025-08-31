@@ -151,12 +151,17 @@ pipeline {
 
         stage('Push to Main Branch') {
             when {
-                expression { currentBuild.result == null || currentBuild.result == 'SUCCESS' }
+                allOf {
+                    success()
+                    expression { env.BRANCH_NAME == 'dev' || env.GIT_BRANCH == 'dev' }
+                }
             }
             steps {
-                    dir('backend') {
-                        withCredentials([usernamePassword(credentialsId: GITHUB_CREDENTIALS,
-                            usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
+                    dir('backend') { withCredentials([usernamePassword(
+                            credentialsId: "${GITHUB_CREDENTIALS}",
+                            usernameVariable: 'GIT_USER',
+                            passwordVariable: 'GIT_PASS'
+                        )]) {
                             bat """
                                 git config user.name "Jenkins CI"
                                 git config user.email "jenkins@yourdomain.com"
