@@ -42,8 +42,16 @@ jobs:
 
       - name: Run Backend in Background
         run: |
-          nohup python -m uvicorn main:app --host 0.0.0.0 --port 8000 &
-          sleep 5  # wait for server to start
+          nohup python -m uvicorn main:app --host 127.0.0.1 --port 8000 &
+          # wait up to ~20s until backend responds
+          for i in {1..10}; do
+            if curl -s http://127.0.0.1:8000/docs > /dev/null; then
+              echo "Backend is up!"
+              break
+            fi
+            echo "Waiting for backend..."
+            sleep 2
+          done
 
       - name: Run Pytest
         run: |
