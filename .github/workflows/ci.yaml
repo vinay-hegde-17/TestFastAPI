@@ -40,10 +40,15 @@ jobs:
           cd tests
           python -m pip install -r requirements.txt
 
+      - name: Run Backend in Background
+        run: |
+          nohup python -m uvicorn main:app --host 0.0.0.0 --port 8000 &
+          sleep 5  # wait for server to start
+
       - name: Run Pytest
         run: |
           cd tests
-          pytest --maxfail=1 --disable-warnings -q
+          pytest
 
   merge-and-build:
     needs: test
